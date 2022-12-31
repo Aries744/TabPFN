@@ -166,5 +166,6 @@ files_other/encoders.xlsx
 files_other/~$encoders.xlsx
 files_other/drawings
 tabpfn/layer_new.py
+tabpfn/layer_old.py
 tabpfn/U_attention.ipynb
 tabpfn/U_layer.ipynb

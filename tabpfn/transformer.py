@@ -166,13 +166,19 @@ class TransformerModel(nn.Module):
             src = (None,) + src
 
         style_src, x_src, y_src = src # Categorical features, x numerical, and y
+        print(f"Size of x_src before encoding:{x_src.size()}")
+        print(f"Size of y_src before encoding:{y_src.size()}")
+        print(f"Size of style_src before encoding:{style_src}")
+        #print(f"and first 10 features of the first datapoint {style_src[0:10]}")
+        #print(f"and first 10 features of the first datapoint {style_src[0:10] if style_src is not None else style_src}")
         x_src = self.encoder(x_src) # Numerical encoding of x
-        print(f"This is the size of x_src:{x_src.size()}")
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
-        style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else \
-            torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
+        style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
+        print(f"Size of x_src after encoding:{x_src.size()}")
+        print(f"Size of y_src after encoding:{y_src.size()}")
+        print(f"Size of style_src after encoding:{style_src.size()}")
         
-        ### Donn't understand global src ### - It seems global_att_embedding and src_mask are linked somehow!
+        ### Don't understand global src ### - It seems global_att_embedding and src_mask are linked somehow!
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
             self.global_att_embeddings.weight.unsqueeze(1).repeat(1, x_src.shape[1], 1) 
             
@@ -195,6 +201,7 @@ class TransformerModel(nn.Module):
                             self.generate_global_att_query_matrix(*src_mask_args).to(x_src.device))
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
+        # print(global_src.shape, style_src.shape, train_x.shape, x_src[single_eval_pos:].shape)
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
 
         if self.input_ln is not None:

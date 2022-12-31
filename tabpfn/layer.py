@@ -133,6 +133,8 @@ class TransformerEncoderLayer(Module):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
+            print(f"Dimensions of src_: {src_.shape}")
+
             ################### The Inter-feature implementation ###########################
             
             src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
