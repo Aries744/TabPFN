@@ -167,16 +167,16 @@ class TransformerModel(nn.Module):
 
         style_src, x_src, y_src = src # Categorical features, x numerical, and y
         print(f"Size of x_src before encoding:{x_src.size()}")
-        print(f"Size of y_src before encoding:{y_src.size()}")
-        print(f"Size of style_src before encoding:{style_src}")
+        # print(f"Size of y_src before encoding:{y_src.size()}")
+        # print(f"Size of style_src before encoding:{style_src}")
         #print(f"and first 10 features of the first datapoint {style_src[0:10]}")
         #print(f"and first 10 features of the first datapoint {style_src[0:10] if style_src is not None else style_src}")
         x_src = self.encoder(x_src) # Numerical encoding of x
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
-        print(f"Size of x_src after encoding:{x_src.size()}")
-        print(f"Size of y_src after encoding:{y_src.size()}")
-        print(f"Size of style_src after encoding:{style_src.size()}")
+        # print(f"Size of x_src after encoding:{x_src.size()}")
+        # print(f"Size of y_src after encoding:{y_src.size()}")
+        # print(f"Size of style_src after encoding:{style_src.size()}")
         
         ### Don't understand global src ### - It seems global_att_embedding and src_mask are linked somehow!
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
