@@ -58,18 +58,19 @@ class TransformerEncoderLayer(Module):
         
         ############################## Inter-feature attention ############################################
         # self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
-        self.pre_linear1 = Linear(32, emsize_f, **factory_kwargs)
+        dim = 8
+        self.pre_linear1 = Linear(dim, emsize_f, **factory_kwargs)
         
         self.inter_feature_attn = MultiheadAttention(emsize_f, 4, dropout=dropout, batch_first=batch_first,
                                             **factory_kwargs)
         
         self.pre_linear2 = Linear(emsize_f, dim_feedforward, **factory_kwargs)
-        self.pre_linear3 = Linear(dim_feedforward, 1, **factory_kwargs)
+        self.pre_linear3 = Linear(dim_feedforward, dim, **factory_kwargs)
         
-        self.pre_norm_ = LayerNorm(emsize_f, eps=layer_norm_eps, **factory_kwargs)
+        self.pre_norm_ = LayerNorm(dim, eps=layer_norm_eps, **factory_kwargs) # emsize_f changed to dim
         self.pre_dropout = Dropout(dropout)
         
-        self.pre_linear4 = Linear(emsize_f, dim_feedforward, **factory_kwargs)
+        self.pre_linear4 = Linear(dim, dim_feedforward, **factory_kwargs) # emsize_f changed to dim
         self.pre_linear5 = Linear(dim_feedforward, d_model, **factory_kwargs)
         ####################################################################################################
         
@@ -150,8 +151,10 @@ class TransformerEncoderLayer(Module):
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
-            src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
+            print(f"src1 after FF {src1.shape}") # NOW torch.Size([107, 1152, 32])
+            # src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
+            print(f"src1 after pre_norm_ {src1.shape}")
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
 
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]

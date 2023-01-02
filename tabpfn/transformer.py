@@ -171,7 +171,7 @@ class TransformerModel(nn.Module):
 
         ################### Embedding for Inter-feature implementation ###########################
 
-        dim = 32 # we need to pass this through train()
+        dim = 8 # we need to pass this through train()
 
         # for simulation:
         dp = 1152
