@@ -57,8 +57,10 @@ class TransformerEncoderLayer(Module):
         # self.pre_norm2 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
         
         ############################## Inter-feature attention ############################################
-        # self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
+        
         dim = 8
+
+        # self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
         self.pre_linear1 = Linear(dim, emsize_f, **factory_kwargs)
         
         self.inter_feature_attn = MultiheadAttention(emsize_f, 4, dropout=dropout, batch_first=batch_first,
@@ -76,10 +78,10 @@ class TransformerEncoderLayer(Module):
         
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
         self.dropout = Dropout(dropout)
-        self.linear2 = Linear(dim_feedforward, emsize_f, **factory_kwargs)
+        self.linear2 = Linear(dim_feedforward, dim, **factory_kwargs) # emsize_f changed to dim
 
         self.norm1 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
-        self.norm2 = LayerNorm(emsize_f, eps=layer_norm_eps, **factory_kwargs)
+        self.norm2 = LayerNorm(dim, eps=layer_norm_eps, **factory_kwargs) # emsize_f changed to dim
         self.dropout1 = Dropout(dropout)
         self.dropout2 = Dropout(dropout)
         self.pre_norm = pre_norm
@@ -160,6 +162,9 @@ class TransformerEncoderLayer(Module):
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             
+            print(f"src_left {src_left.shape}")
+            print(f"src_right {src_right.shape}")
+
             ###############################################################################
             
             """################### The Inter-feature implementation Old ##########################
@@ -211,4 +216,6 @@ class TransformerEncoderLayer(Module):
         if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
             src = self.norm2(src)
         
+        print(f"passed through TransformerEncoderLayer()")
+
         return src
