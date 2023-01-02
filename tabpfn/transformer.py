@@ -167,7 +167,7 @@ class TransformerModel(nn.Module):
 
         style_src, x_src, y_src = src # Categorical features, x numerical, and y
         print(f"Size of x_src before encoding:{x_src.size()}")
-        print(f"x_src with cat {x_src[0]}")
+        # print(f"x_src with cat {x_src[0]}")
         # print(f"Size of y_src before encoding:{y_src.size()}")
         # print(f"Size of style_src before encoding:{style_src}")
         #print(f"and first 10 features of the first datapoint {style_src[0:10]}")

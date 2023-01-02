@@ -38,7 +38,7 @@ class Losses():
 
 
 
-def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=200, nlayers=6, nhead=2, dropout=0.0,
+def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsize_f = 100, nhid=200, nlayers=6, nhead=2, dropout=0.0,
           epochs=10, steps_per_epoch=100, batch_size=200, bptt=10, lr=None, weight_decay=0.0, warmup_epochs=10, input_normalization=False,
           y_encoder_generator=None, pos_encoder_generator=None, decoder=None, extra_prior_kwargs_dict={}, scheduler=get_cosine_schedule_with_warmup,
           load_weights_from_this_state_dict=None, validation_period=10, single_eval_pos_gen=None, bptt_extra_samples=None, gpu_device='cuda:0',
@@ -62,7 +62,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
     
     # 5.1) here encoder_generator = encoders.Linear - class Linear from encoders.py
     #      and then they create an object (encoder) of class Linear: 
-    encoder = encoder_generator(dl.num_features, emsize)
+    encoder = encoder_generator(dl.num_features, emsize_f)
 
     # 6) (not sure about this comment anymore) this line below is commented out - that's important! if it wasn't, then we'd be doing nn.Embedding() from torch to encode datapoints
     #    now with this line commented out we're doing a simple encoding with nn.Linear() from torch
@@ -71,7 +71,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
     #style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
     style_def = None
     #print(f'Style definition of first 3 examples: {style_def[:3] if style_def is not None else None}')
-    style_encoder = style_encoder_generator(style_def.shape[1], emsize) if (style_def is not None) else None
+    style_encoder = style_encoder_generator(style_def.shape[1], emsize_f) if (style_def is not None) else None
     if isinstance(criterion, nn.GaussianNLLLoss):
         n_out = 2
     elif isinstance(criterion, nn.CrossEntropyLoss):
@@ -79,9 +79,9 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, nhid=
     else:
         n_out = 1
 
-    model = TransformerModel(encoder, n_out, emsize, nhead, nhid, nlayers, dropout, style_encoder=style_encoder,
-                             y_encoder=y_encoder_generator(1, emsize), input_normalization=input_normalization,
-                             pos_encoder=(pos_encoder_generator or positional_encodings.NoPositionalEncoding)(emsize, bptt*2),
+    model = TransformerModel(encoder, n_out, emsize, emsize_f, nhead, nhid, nlayers, dropout, style_encoder=style_encoder,
+                             y_encoder=y_encoder_generator(1, emsize_f), input_normalization=input_normalization,
+                             pos_encoder=(pos_encoder_generator or positional_encodings.NoPositionalEncoding)(emsize_f, bptt*2),
                              decoder=decoder, init_method=initializer, efficient_eval_masking=efficient_eval_masking, **model_extra_args
                              )
     model.criterion = criterion
