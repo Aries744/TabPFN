@@ -176,15 +176,14 @@ class TransformerModel(nn.Module):
         # for simulation:
         dp = 1152
         style_src = rearrange(torch.cat((torch.randint(1,4,[dp,1]),torch.randint(1,6,[dp,1]),torch.randint(1,3,[dp,5])),dim=1).unsqueeze(-1), 'd f a -> d a f')
+        encoder = nn.Linear(x_src.shape[2], dim)
 
         if style_src is not None:
-            encoder = nn.Linear(x_src.shape[2], style_src.shape[2]*dim) # we need a smarter way for this maybe?
             style_src = style_src.squeeze(1)
             style_src = embed_data(dim, style_src)
             style_src = rearrange(style_src, 'd f e -> d 1 (f e )')
             print(f"style_src after embedding {style_src.shape}")
         else:
-            encoder = nn.Linear(x_src.shape[2], dim) # we need a smarter way for this maybe?
             style_src = torch.tensor([], device=x_src.device)
 
         x_src = x_src.squeeze(1)
@@ -239,7 +238,15 @@ class TransformerModel(nn.Module):
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
         print(global_src.shape, style_src.shape, train_x.shape, x_src[single_eval_pos:].shape)
         # print(f"Size of train_x:{train_x.shape}")
+        f""""
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
+        """
+        src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
+        ################### Embedding for Inter-feature implementation ###########################
+        src_temp = torch.cat([train_x, x_src[single_eval_pos:]], 0)
+        print(f"Size of src_temp:{src_temp.shape}")
+        ##########################################################################################
+
         print(f"Size of src:{src.shape}")
 
         if self.input_ln is not None:
