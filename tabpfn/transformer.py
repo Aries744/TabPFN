@@ -176,7 +176,10 @@ class TransformerModel(nn.Module):
         # for simulation:
         dp = 1152
         style_src = rearrange(torch.cat((torch.randint(1,4,[dp,1]),torch.randint(1,6,[dp,1]),torch.randint(1,3,[dp,5])),dim=1).unsqueeze(-1), 'd f a -> d a f')
-        encoder = nn.Linear(x_src.shape[2], dim)
+        encoder = nn.Linear(x_src.shape[2], x_src.shape[2]*dim)
+        print(f"style_src.shape {style_src.shape} and x_src.shape {x_src.shape}")
+        num_ft = style_src.shape[2] + x_src.shape[2] if style_src is not None else x_src.shape[2]
+        print(f"num_ft {num_ft}")
 
         if style_src is not None:
             style_src = style_src.squeeze(1)
@@ -241,19 +244,26 @@ class TransformerModel(nn.Module):
         f""""
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
         """
-        src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
         ################### Embedding for Inter-feature implementation ###########################
-        src_temp = torch.cat([train_x, x_src[single_eval_pos:]], 0)
-        print(f"Size of src_temp:{src_temp.shape}")
+        src_temp_1 = torch.cat([train_x, x_src[single_eval_pos:]], 0)
+        print(f"Size of src_temp_1:{src_temp_1.shape}")
+        src_temp_2 = torch.cat([style_src, src_temp_1], 2)
+        print(f"Size of src_temp_2:{src_temp_2.shape}")
+        src_temp_3 = torch.cat([global_src, src_temp_2], 0)
+        print(f"Size of src_temp_3:{src_temp_3.shape}")
         ##########################################################################################
-
-        print(f"Size of src:{src.shape}")
 
         if self.input_ln is not None:
             src = self.input_ln(src)
 
         if self.pos_encoder is not None:
             src = self.pos_encoder(src)
+
+        ################### Embedding for Inter-feature implementation ###########################
+        src_temp_4 = torch.split(src_temp_3, [dim]*num_ft, dim=2)
+        src = torch.stack(list(src_temp_4), dim=0).squeeze(2)
+        print(f"Size of src:{src.shape}")
+        ##########################################################################################
 
         output = self.transformer_encoder(src, src_mask)
         output = self.decoder(output)

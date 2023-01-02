@@ -57,7 +57,8 @@ class TransformerEncoderLayer(Module):
         # self.pre_norm2 = LayerNorm(d_model, eps=layer_norm_eps, **factory_kwargs)
         
         ############################## Inter-feature attention ############################################
-        self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
+        # self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
+        self.pre_linear1 = Linear(32, emsize_f, **factory_kwargs)
         
         self.inter_feature_attn = MultiheadAttention(emsize_f, 4, dropout=dropout, batch_first=batch_first,
                                             **factory_kwargs)
@@ -142,9 +143,9 @@ class TransformerEncoderLayer(Module):
             ################### The Inter-feature implementation ###########################
             
             print(f"src_: {src_.shape}") # torch.Size([1152, 1, 100])
-            src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
-            print(f"src1: {src1.shape}") # torch.Size([100, 1152, 1])
-            src1 = self.pre_linear1(src1) # <- linear layers (to get q, k, v)
+            # src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
+            # print(f"src1: {src1.shape}") # torch.Size([100, 1152, 1])
+            src1 = self.pre_linear1(src_) # <- linear layers (to get q, k, v)
             print(f"src1 embedded, ready for passing into inter_feature_attn: {src1.shape}") # torch.Size([100, 1152, 100])
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
             
