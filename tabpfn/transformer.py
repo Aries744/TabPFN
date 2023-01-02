@@ -11,7 +11,9 @@ from einops import rearrange
 # from tabpfn.utils import SeqBN, bool_mask_to_att_mask
 from layer import TransformerEncoderLayer, _get_activation_fn
 from utils import SeqBN, bool_mask_to_att_mask
-
+# Ugne
+import numpy as np
+import torch.nn.functional as F
 
 
 class TransformerModel(nn.Module):
@@ -166,9 +168,41 @@ class TransformerModel(nn.Module):
             src = (None,) + src
 
         style_src, x_src, y_src = src # Categorical features, x numerical, and y
-        print(f"Size of x_src before encoding:{x_src.size()}")
+
+        ################### Embedding for Inter-feature implementation ###########################
+
+        dim = 32 # we need to pass this through train()
+
+        # for simulation:
+        dp = 1152
+        style_src = rearrange(torch.cat((torch.randint(1,4,[dp,1]),torch.randint(1,6,[dp,1]),torch.randint(1,3,[dp,5])),dim=1).unsqueeze(-1), 'd f a -> d a f')
+
+        if style_src is not None:
+            encoder = nn.Linear(x_src.shape[2], style_src.shape[2]*dim) # we need a smarter way for this maybe?
+            style_src = style_src.squeeze(1)
+            style_src = embed_data(dim, style_src)
+            style_src = rearrange(style_src, 'd f e -> d 1 (f e )')
+            print(f"style_src after embedding {style_src.shape}")
+        else:
+            encoder = nn.Linear(x_src.shape[2], dim) # we need a smarter way for this maybe?
+            style_src = torch.tensor([], device=x_src.device)
+
+        x_src = x_src.squeeze(1)
+        x_src = encoder(x_src)
+        x_src = rearrange(x_src.unsqueeze(-1), 'd f a -> d a f')
+        print(f"x_src after embedding {x_src.shape}")
+
+        y_src_int = y_src.type(torch.int64)
+        y_src = embed_data(x_src.shape[2], y_src_int)
+        print(f"y_src after embedding {y_src.shape}")
+
+
+        ##########################################################################################
+
+        f""""
+        print(f"Size of x_src before encoding:{x_src.size()}") # torch.Size([1152, 1, 100])
         # print(f"x_src with cat {x_src[0]}")
-        # print(f"Size of y_src before encoding:{y_src.size()}")
+        print(f"Size of y_src before encoding:{y_src.size()}")
         # print(f"Size of style_src before encoding:{style_src}")
         #print(f"and first 10 features of the first datapoint {style_src[0:10]}")
         #print(f"and first 10 features of the first datapoint {style_src[0:10] if style_src is not None else style_src}")
@@ -176,8 +210,9 @@ class TransformerModel(nn.Module):
         y_src = self.y_encoder(y_src.unsqueeze(-1) if len(y_src.shape) < len(x_src.shape) else y_src) # encode y
         style_src = self.style_encoder(style_src).unsqueeze(0) if self.style_encoder else torch.tensor([], device=x_src.device) # Style encode categorical features else empty tensor
         # print(f"Size of x_src after encoding:{x_src.size()}")
-        # print(f"Size of y_src after encoding:{y_src.size()}")
+        print(f"Size of y_src after encoding:{y_src.size()}")
         # print(f"Size of style_src after encoding:{style_src.size()}")
+        """
         
         ### Don't understand global src ### - It seems global_att_embedding and src_mask are linked somehow!
         global_src = torch.tensor([], device=x_src.device) if self.global_att_embeddings is None else \
@@ -202,8 +237,10 @@ class TransformerModel(nn.Module):
                             self.generate_global_att_query_matrix(*src_mask_args).to(x_src.device))
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
-        # print(global_src.shape, style_src.shape, train_x.shape, x_src[single_eval_pos:].shape)
+        print(global_src.shape, style_src.shape, train_x.shape, x_src[single_eval_pos:].shape)
+        # print(f"Size of train_x:{train_x.shape}")
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
+        print(f"Size of src:{src.shape}")
 
         if self.input_ln is not None:
             src = self.input_ln(src)
@@ -303,3 +340,52 @@ class TransformerEncoderDiffInit(Module):
             output = self.norm(output)
 
         return output
+
+################### For Inter-feature implementation ###########################
+
+class simple_MLP(nn.Module):
+    def __init__(self,dims):
+        super(simple_MLP, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(dims[0], dims[1]),
+            nn.ReLU(),
+            nn.Linear(dims[1], dims[2])
+        )
+        
+    def forward(self, x):
+        if len(x.shape)==1:
+            x = x.view(x.size(0), -1)
+        x = self.layers(x)
+        return x
+
+
+def categories_offset(data_categorical):
+    f"""Incoming data_categorical must be of shape torch.Size([datapoints, features])
+        Output categories_offset_1 is of shape torch.Size([features])"""
+    
+    data_categorical_1 = rearrange(data_categorical.unsqueeze(-1), 'd f a -> f d a')
+    data_categorical_dim = np.array([list(torch.unique(x).shape) for x in data_categorical_1]).squeeze(1)
+    
+    categories_offset = F.pad(torch.tensor(list(data_categorical_dim)), (1, 0), value = 0)
+    categories_offset_1 = categories_offset.cumsum(dim = -1)[:-1]
+
+    num_unique_categories = sum(data_categorical_dim)
+    # print(data_categorical.shape)
+    # print(categories_offset_1.shape)
+    
+    return num_unique_categories, categories_offset_1
+
+def embed_data(dim, x_categ):
+    f"""Incoming x_categ must be of shape torch.Size([datapoints, features])
+        Output x_categ_enc is of shape torch.Size([datapoints, features, dim])"""
+
+    num_unique_categories, categ_offset = categories_offset(x_categ)
+    
+    embeds = nn.Embedding(num_unique_categories+1, dim)
+    
+    x_categ = x_categ + categ_offset.type_as(x_categ)
+    x_categ_enc = embeds(x_categ)
+
+    return x_categ_enc
+
+##############################################################################################

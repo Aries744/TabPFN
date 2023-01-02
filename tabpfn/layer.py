@@ -141,11 +141,11 @@ class TransformerEncoderLayer(Module):
 
             ################### The Inter-feature implementation ###########################
             
-            print(f"src_: {src_.shape}")
+            print(f"src_: {src_.shape}") # torch.Size([1152, 1, 100])
             src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
-            print(f"src1: {src1.shape}")
+            print(f"src1: {src1.shape}") # torch.Size([100, 1152, 1])
             src1 = self.pre_linear1(src1) # <- linear layers (to get q, k, v)
-            print(f"src1 embedded, ready for passing into inter_feature_attn: {src1.shape}")
+            print(f"src1 embedded, ready for passing into inter_feature_attn: {src1.shape}") # torch.Size([100, 1152, 100])
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up

@@ -497,3 +497,23 @@ def get_Canonical(num_classes):
 
 def get_Embedding(num_embs_per_feature=100):
     return lambda num_features, emsize: EmbeddingEncoder(num_features, emsize, num_embs=num_embs_per_feature)
+
+
+################### For Inter-feature implementation ###########################
+
+class simple_MLP(nn.Module):
+    def __init__(self,dims):
+        super(simple_MLP, self).__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(dims[0], dims[1]),
+            nn.ReLU(),
+            nn.Linear(dims[1], dims[2])
+        )
+        
+    def forward(self, x):
+        if len(x.shape)==1:
+            x = x.view(x.size(0), -1)
+        x = self.layers(x)
+        return x
+
+######################################################################################
