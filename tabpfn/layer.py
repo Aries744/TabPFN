@@ -73,7 +73,7 @@ class TransformerEncoderLayer(Module):
         self.pre_dropout = Dropout(dropout)
         
         self.pre_linear4 = Linear(dim, dim_feedforward, **factory_kwargs) # emsize_f changed to dim
-        self.pre_linear5 = Linear(dim_feedforward, d_model, **factory_kwargs)
+        self.pre_linear5 = Linear(dim_feedforward, dim, **factory_kwargs) # d_model changed to dim
         ####################################################################################################
         
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
@@ -157,9 +157,11 @@ class TransformerEncoderLayer(Module):
             # src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
             print(f"src1 after pre_norm_ {src1.shape}")
+            src1 = rearrange(src1, 'f d e -> d 1 (f e)') 
+            print(f"src1 after rearrange {src1.shape}")
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
-            print(f"src1 after pre_linear5 {src1.shape}")
-            src1_ = rearrange(src1_, 'f d e -> d f e') 
+            print(f"src1_ after pre_linear5 {src1_.shape}")
+
 
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
