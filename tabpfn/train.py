@@ -136,6 +136,7 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
                 before_forward = time.time()
                 if bptt_extra_samples is None:
                     single_eval_pos = single_eval_pos_gen() if callable(single_eval_pos_gen) else single_eval_pos_gen
+                    print(f"single_eval_pos train {single_eval_pos}")
                 else:
                     single_eval_pos = targets.shape[0] - bptt_extra_samples
 
@@ -144,7 +145,9 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
                     output = model(tuple(e.to(device) if torch.is_tensor(e) else e for e in data) if isinstance(data, tuple) else data.to(device)
                                    , single_eval_pos=single_eval_pos)
 
+                    print(f"output in train(): {output.shape}")
                     forward_time = time.time() - before_forward
+                    print(f"forward_time: {forward_time}")
 
                     if single_eval_pos is not None:
                         targets = targets[single_eval_pos:]

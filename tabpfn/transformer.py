@@ -29,8 +29,8 @@ class TransformerModel(nn.Module):
         
         # Initiate n subsequent layers of transformer (initiated all the same or not)
         # all_layers_same_init=False by default and not changed later so we do TransformerEncoderDiffInit(encoder_layer_creator, nlayers)
-        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), 6)\
-            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, 6)
+        self.transformer_encoder = TransformerEncoder(encoder_layer_creator(), 2)\
+            if all_layers_same_init else TransformerEncoderDiffInit(encoder_layer_creator, 2)
         self.ninp = emsize_f
         
         # Store the encoder, decoder modules
@@ -43,6 +43,13 @@ class TransformerModel(nn.Module):
         self.init_method = init_method
         if num_global_att_tokens is not None: 
             assert not full_attention
+        
+        ################### For Inter-feature implementation ###########################
+        self.decoder_new = decoder
+        self.nhid = nhid
+        self.n_out = n_out
+        self.emsize_f = emsize_f
+        ################################################################################
         
         self.global_att_embeddings = nn.Embedding(num_global_att_tokens, emsize_f) if num_global_att_tokens else None # seems like global_att_embeddings=None
         self.full_attention = full_attention
@@ -181,6 +188,7 @@ class TransformerModel(nn.Module):
         num_ft = style_src.shape[2] + x_src.shape[2] if style_src is not None else x_src.shape[2]
         print(f"Incoming style_src {style_src.shape}") if style_src is not None else print(f"Incoming style_src {style_src}")
         print(f"Incoming x_src {x_src.shape}")
+        print(f"Incoming x_src {x_src[1151]}")
         print(f"num_ft {num_ft}")
 
         if style_src is not None:
@@ -269,9 +277,13 @@ class TransformerModel(nn.Module):
         print(f"Size of src: {src.shape}")
         ##########################################################################################
 
+        print(f"src_mask into transformer_encofer(): {src_mask}")
         output = self.transformer_encoder(src, src_mask)
         print(f"output before decoder: {output.shape}")
-        output = self.decoder(output)
+        output = rearrange(output, 'f d e -> d 1 (f e)')
+        print(f"output before decoder: {output.shape}")
+        decoder_new = self.decoder_new(num_ft*dim, self.nhid, self.n_out) if self.decoder_new is not None else nn.Sequential(nn.Linear(num_ft*dim, self.nhid), nn.GELU(), nn.Linear(self.nhid, self.n_out))
+        output = decoder_new(output)
         print(f"output after decoder: {output.shape}")
         return output[single_eval_pos+len(style_src)+(self.global_att_embeddings.num_embeddings if self.global_att_embeddings else 0):]
 
