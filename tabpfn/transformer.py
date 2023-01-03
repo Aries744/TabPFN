@@ -171,7 +171,7 @@ class TransformerModel(nn.Module):
 
         ################### Embedding for Inter-feature implementation ###########################
 
-        dim = 8 # we need to pass this through train()
+        dim = 8 # we need to pass this through config
 
         # for simulation:
         dp = 1152
@@ -270,7 +270,9 @@ class TransformerModel(nn.Module):
         ##########################################################################################
 
         output = self.transformer_encoder(src, src_mask)
+        print(f"output before decoder: {output.shape}")
         output = self.decoder(output)
+        print(f"output after decoder: {output.shape}")
         return output[single_eval_pos+len(style_src)+(self.global_att_embeddings.num_embeddings if self.global_att_embeddings else 0):]
 
     @torch.no_grad()

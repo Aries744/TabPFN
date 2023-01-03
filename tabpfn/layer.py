@@ -58,7 +58,11 @@ class TransformerEncoderLayer(Module):
         
         ############################## Inter-feature attention ############################################
         
-        dim = 8
+        dim = 8 # we need to pass this through config
+        self.dim = dim
+        self.dim_feedforward = dim_feedforward
+        self.factory_kwargs = factory_kwargs
+        self.layer_norm_eps = layer_norm_eps
 
         # self.pre_linear1 = Linear(1, emsize_f, **factory_kwargs)
         self.pre_linear1 = Linear(dim, emsize_f, **factory_kwargs)
@@ -73,7 +77,7 @@ class TransformerEncoderLayer(Module):
         self.pre_dropout = Dropout(dropout)
         
         self.pre_linear4 = Linear(dim, dim_feedforward, **factory_kwargs) # emsize_f changed to dim
-        self.pre_linear5 = Linear(dim_feedforward, dim, **factory_kwargs) # d_model changed to dim
+        self.pre_linear5 = Linear(dim_feedforward, d_model, **factory_kwargs)
         ####################################################################################################
         
         self.linear1 = Linear(d_model, dim_feedforward, **factory_kwargs)
@@ -141,28 +145,31 @@ class TransformerEncoderLayer(Module):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
-            print(f"Size of of src_: {src_.shape}") 
+            print(f"incoming src_:: {src_.shape}") 
 
             ################### The Inter-feature implementation ###########################
             
+            num_ft = src_.shape[0]
+
             # src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
             # print(f"src1: {src1.shape}")
             src1 = self.pre_linear1(src_) # <- linear layers (to get q, k, v)
-            print(f"src1 embedded, ready for passing into inter_feature_attn: {src1.shape}") 
+            print(f"src1 after pre_linear1: {src1.shape}") 
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
             print(f"src1 after inter_feature_attn: {src1.shape}") 
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
-            print(f"src1 after FF {src1.shape}") 
+            print(f"src1 after pre_linear3 {src1.shape}") 
             # src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
             print(f"src1 after pre_norm_ {src1.shape}")
             src1 = rearrange(src1, 'f d e -> d 1 (f e)') 
             print(f"src1 after rearrange {src1.shape}")
-            src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
+            pre_linear4_new = Linear(num_ft*self.dim, self.dim_feedforward, **self.factory_kwargs)
+            src1_ = self.pre_linear5(self.activation(pre_linear4_new(src1)))
             print(f"src1_ after pre_linear5 {src1_.shape}")
 
-
+            print(f"single_eval_position {single_eval_position}")
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             
@@ -213,13 +220,21 @@ class TransformerEncoderLayer(Module):
             src_ = self.norm2(src_o + src1_)
         else: # this gets RUN
             src_ = src_o
-            
-        src2 = self.linear2(self.activation(self.linear1(src_)))
+        
+        linear2_new = Linear(self.dim_feedforward, num_ft*self.dim, **self.factory_kwargs)
+        src2 = linear2_new(self.activation(self.linear1(src_)))
+        # src2 = self.linear2(self.activation(self.linear1(src_)))
+        # print(f"src1 before rearrange {src1.shape}")
+        # print(f"self.dropout2(src2) {self.dropout2(src2).shape}")
         src = src1 + self.dropout2(src2)
 
         if not self.pre_norm: # this gets RUN: pre_norm=False, not False = True
-            src = self.norm2(src)
+            norm2_new = LayerNorm(num_ft*self.dim, eps=self.layer_norm_eps, **self.factory_kwargs)
+            src = norm2_new(src)
         
+        src = torch.stack(list(torch.split(src, [self.dim]*num_ft, dim=2)), dim=0).squeeze(2)
+
+        print(f"src shape out: {src.shape}")
         print(f"passed through TransformerEncoderLayer()")
 
         return src
