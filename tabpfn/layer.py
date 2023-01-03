@@ -67,7 +67,7 @@ class TransformerEncoderLayer(Module):
                                             **factory_kwargs)
         
         self.pre_linear2 = Linear(emsize_f, dim_feedforward, **factory_kwargs)
-        self.pre_linear3 = Linear(dim_feedforward, dim, **factory_kwargs)
+        self.pre_linear3 = Linear(dim_feedforward, dim, **factory_kwargs) # 1 changed to dim
         
         self.pre_norm_ = LayerNorm(dim, eps=layer_norm_eps, **factory_kwargs) # emsize_f changed to dim
         self.pre_dropout = Dropout(dropout)

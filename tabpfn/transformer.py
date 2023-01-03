@@ -177,26 +177,27 @@ class TransformerModel(nn.Module):
         dp = 1152
         style_src = rearrange(torch.cat((torch.randint(1,4,[dp,1]),torch.randint(1,6,[dp,1]),torch.randint(1,3,[dp,5])),dim=1).unsqueeze(-1), 'd f a -> d a f')
         encoder = nn.Linear(x_src.shape[2], x_src.shape[2]*dim)
-        print(f"style_src.shape {style_src.shape} and x_src.shape {x_src.shape}")
         num_ft = style_src.shape[2] + x_src.shape[2] if style_src is not None else x_src.shape[2]
+        print(f"Incoming style_src {style_src.shape}") if style_src is not None else print(f"Incoming style_src {style_src}")
+        print(f"Incoming x_src {x_src.shape}")
         print(f"num_ft {num_ft}")
 
         if style_src is not None:
             style_src = style_src.squeeze(1)
             style_src = embed_data(dim, style_src)
             style_src = rearrange(style_src, 'd f e -> d 1 (f e )')
-            print(f"style_src after embedding {style_src.shape}")
+            print(f"after embedding: style_src {style_src.shape}")
         else:
             style_src = torch.tensor([], device=x_src.device)
 
         x_src = x_src.squeeze(1)
         x_src = encoder(x_src)
         x_src = rearrange(x_src.unsqueeze(-1), 'd f a -> d a f')
-        print(f"x_src after embedding {x_src.shape}")
+        print(f"after embedding: x_src {x_src.shape}")
 
         y_src_int = y_src.type(torch.int64)
         y_src = embed_data(x_src.shape[2], y_src_int)
-        print(f"y_src after embedding {y_src.shape}")
+        print(f"after embedding: y_src {y_src.shape}")
 
 
         ##########################################################################################
