@@ -160,7 +160,7 @@ def get_diff_config():
 
     return config_diff
 
-
+# (1)
 def get_prior_config(config_type):
     if config_type == 'causal':
         return get_prior_config_causal()
@@ -168,7 +168,6 @@ def get_prior_config(config_type):
         return get_prior_config_gp()
     elif config_type == 'bnn':
         return get_prior_config_bnn()
-
 
 def get_prior_config_gp(max_features=100):
     config_general = get_general_config(max_features, 50, eval_positions=[30])
@@ -207,6 +206,7 @@ def get_prior_config_bnn(max_features=100):
                                                                                   'max': 1001.0}  # Always select MLP
 
 
+# (2)
 def get_prior_config_causal(max_features=100):
     config_general = get_general_config(max_features, 50, eval_positions=[30])
     config_general_real_world = {**config_general}

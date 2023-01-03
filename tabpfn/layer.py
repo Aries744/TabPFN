@@ -138,28 +138,28 @@ class TransformerEncoderLayer(Module):
             
             ################### The Inter-feature implementation ###########################
             
-            print(f"incoming src_: {src_.shape}")
+            # print(f"incoming src_: {src_.shape}")
             src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
-            print(f"src1 after rearrange: {src1.shape}")
+            # print(f"src1 after rearrange: {src1.shape}")
             src1 = self.pre_linear1(src1) # <- linear layers
-            print(f"src1 after pre_linear_1: {src1.shape}")
+            # print(f"src1 after pre_linear_1: {src1.shape}")
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
-            print(f"src1 after inter_feature_attn: {src1.shape}")
+            # print(f"src1 after inter_feature_attn: {src1.shape}")
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
-            print(f"src1 after pre_linear_3: {src1.shape}")
+            # print(f"src1 after pre_linear_3: {src1.shape}")
             src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
-            print(f"src1 after rearrange: {src1.shape}")
+            # print(f"src1 after rearrange: {src1.shape}")
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
-            print(f"src1 after pre_norm_: {src1.shape}")
+            # print(f"src1 after pre_norm_: {src1.shape}")
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
-            print(f"src1_ into inter-sample attn: {src1_.shape}")
+            # print(f"src1_ into inter-sample attn: {src1_.shape}")
 
-            print(f"single_eval_position {single_eval_position}")
+            # print(f"single_eval_position {single_eval_position}")
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]
-            print(f"src_left {src_left.shape}")
-            print(f"src_right {src_right.shape}")
+            # print(f"src_left {src_left.shape}")
+            # print(f"src_right {src_right.shape}")
 
             ###############################################################################
             

@@ -68,10 +68,12 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
     #    now with this line commented out we're doing a simple encoding with nn.Linear() from torch
     #    still not sure what style_def would be, not sure what can dl.get_test_batch()[0][0] return
 
-    #style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
-    style_def = None
-    #print(f'Style definition of first 3 examples: {style_def[:3] if style_def is not None else None}')
+    style_def = dl.get_test_batch()[0][0] # the style in batch of the form ((style, x, y), target, single_eval_pos)
+    #style_def = None
+    print(f'Style definition of first 3 examples: {style_def[:3] if style_def is not None else None}')
     style_encoder = style_encoder_generator(style_def.shape[1], emsize_f) if (style_def is not None) else None
+    print(f"Ugne: style_encoder_generator {style_encoder_generator} (train.py)")
+    print(f"Ugne: style_encoder {style_encoder} (train.py)")
     if isinstance(criterion, nn.GaussianNLLLoss):
         n_out = 2
     elif isinstance(criterion, nn.CrossEntropyLoss):
@@ -127,6 +129,9 @@ def train(priordataloader_class, criterion, encoder_generator, emsize=200, emsiz
         before_get_batch = time.time()
         assert len(dl) % aggregate_k_gradients == 0, 'Please set the number of steps per epoch s.t. `aggregate_k_gradients` divides it.'
         for batch, (data, targets, single_eval_pos) in enumerate(dl):
+            # print(f"Ugne: batch {batch}")
+            # print(f"Ugne: data {data}")
+            # print(f"Ugne: targets {targets}")
             if using_dist and not (batch % aggregate_k_gradients == aggregate_k_gradients - 1):
                 cm = model.no_sync()
             else:

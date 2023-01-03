@@ -250,10 +250,14 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
         else:
             raise Exception()
 
+        # Ugne: config has 'flexible': True
         if 'flexible' in config and config['flexible']:
             get_batch_base = make_get_batch(model_proto)
             extra_kwargs['get_batch'] = get_batch_base
             model_proto = priors.flexible_categorical
+            print(f"Ugne: we use priors.flexible_categorical (model_builder.py)")
+        else:
+            print(f"Ugne: we DON'T use priors.flexible_categorical (model_builder.py)")
 
     if config.get('flexible'):
         prior_hyperparameters['normalize_labels'] = True
@@ -265,6 +269,7 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
 
     use_style = False
 
+    # Ugne: config has 'differentiable': True
     if 'differentiable' in config and config['differentiable']:
         get_batch_base = make_get_batch(model_proto, **extra_kwargs)
         extra_kwargs = {'get_batch': get_batch_base, 'differentiable_hyperparameters': config['differentiable_hyperparameters']}
