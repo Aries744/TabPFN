@@ -141,23 +141,25 @@ class TransformerEncoderLayer(Module):
             assert src_key_padding_mask is None # AssertionError when src_key_padding_mask=None --> so src_key_padding_mask must be not None (but it is None - default None is not changed)
             single_eval_position = src_mask
             
-            print(f"Dimensions of src_: {src_.shape}")
+            print(f"Size of of src_: {src_.shape}") 
 
             ################### The Inter-feature implementation ###########################
             
-            print(f"src_: {src_.shape}") # torch.Size([1152, 1, 100])
             # src1 = rearrange(src_, 'b h w -> w (b h) 1') # <- rearrange for Interfeature attention
-            # print(f"src1: {src1.shape}") # torch.Size([100, 1152, 1])
+            # print(f"src1: {src1.shape}")
             src1 = self.pre_linear1(src_) # <- linear layers (to get q, k, v)
-            print(f"src1 embedded, ready for passing into inter_feature_attn: {src1.shape}") # torch.Size([100, 1152, 100])
+            print(f"src1 embedded, ready for passing into inter_feature_attn: {src1.shape}") 
             src1 = self.inter_feature_attn(src1, src1, src1)[0] # <- interfeature attention
+            print(f"src1 after inter_feature_attn: {src1.shape}") 
             
             src1 = self.pre_linear3(self.activation(self.pre_linear2(src1))) # <- linear layers to squeeze everything back up
-            print(f"src1 after FF {src1.shape}") # NOW torch.Size([107, 1152, 32])
+            print(f"src1 after FF {src1.shape}") 
             # src1 = rearrange(src1, 'w (b h) 1 -> b h w', b = src_.size()[0]) 
             src1 = self.pre_norm_(self.pre_dropout(src1) + src_) # <- residual layer
             print(f"src1 after pre_norm_ {src1.shape}")
             src1_ = self.pre_linear5(self.activation(self.pre_linear4(src1)))
+            print(f"src1 after pre_linear5 {src1.shape}")
+            src1_ = rearrange(src1_, 'f d e -> d f e') 
 
             src_left = self.self_attn(src1_[:single_eval_position], src1_[:single_eval_position], src1_[:single_eval_position])[0]
             src_right = self.self_attn(src1_[single_eval_position:], src1_[:single_eval_position], src1_[:single_eval_position])[0]

@@ -176,7 +176,8 @@ class TransformerModel(nn.Module):
         # for simulation:
         dp = 1152
         style_src = rearrange(torch.cat((torch.randint(1,4,[dp,1]),torch.randint(1,6,[dp,1]),torch.randint(1,3,[dp,5])),dim=1).unsqueeze(-1), 'd f a -> d a f')
-        encoder = nn.Linear(x_src.shape[2], x_src.shape[2]*dim)
+        
+        # encoder = nn.Linear(x_src.shape[2], x_src.shape[2]*dim)
         num_ft = style_src.shape[2] + x_src.shape[2] if style_src is not None else x_src.shape[2]
         print(f"Incoming style_src {style_src.shape}") if style_src is not None else print(f"Incoming style_src {style_src}")
         print(f"Incoming x_src {x_src.shape}")
@@ -184,25 +185,27 @@ class TransformerModel(nn.Module):
 
         if style_src is not None:
             style_src = style_src.squeeze(1)
-            style_src = embed_data(dim, style_src)
+            style_src = embed_data_cat(dim, style_src)
             style_src = rearrange(style_src, 'd f e -> d 1 (f e )')
             print(f"after embedding: style_src {style_src.shape}")
         else:
             style_src = torch.tensor([], device=x_src.device)
 
         x_src = x_src.squeeze(1)
-        x_src = encoder(x_src)
-        x_src = rearrange(x_src.unsqueeze(-1), 'd f a -> d a f')
+        #x_src = encoder(x_src)
+        x_src = embed_data_num(dim, x_src)
+        #x_src = rearrange(x_src.unsqueeze(-1), 'd f a -> d a f')
+        x_src = rearrange(x_src, 'd f e -> d 1 (f e)')
         print(f"after embedding: x_src {x_src.shape}")
 
         y_src_int = y_src.type(torch.int64)
-        y_src = embed_data(x_src.shape[2], y_src_int)
+        y_src = embed_data_cat(x_src.shape[2], y_src_int)
         print(f"after embedding: y_src {y_src.shape}")
 
 
         ##########################################################################################
 
-        f""""
+        r""""
         print(f"Size of x_src before encoding:{x_src.size()}") # torch.Size([1152, 1, 100])
         # print(f"x_src with cat {x_src[0]}")
         print(f"Size of y_src before encoding:{y_src.size()}")
@@ -240,18 +243,18 @@ class TransformerModel(nn.Module):
                             self.generate_global_att_query_matrix(*src_mask_args).to(x_src.device))
 
         train_x = x_src[:single_eval_pos] + y_src[:single_eval_pos] # y is added to x training set
-        print(global_src.shape, style_src.shape, train_x.shape, x_src[single_eval_pos:].shape)
+        # print(global_src.shape, style_src.shape, train_x.shape, x_src[single_eval_pos:].shape)
         # print(f"Size of train_x:{train_x.shape}")
         f""""
         src = torch.cat([global_src, style_src, train_x, x_src[single_eval_pos:]], 0)
         """
         ################### Embedding for Inter-feature implementation ###########################
         src_temp_1 = torch.cat([train_x, x_src[single_eval_pos:]], 0)
-        print(f"Size of src_temp_1:{src_temp_1.shape}")
         src_temp_2 = torch.cat([style_src, src_temp_1], 2)
-        print(f"Size of src_temp_2:{src_temp_2.shape}")
         src_temp_3 = torch.cat([global_src, src_temp_2], 0)
-        print(f"Size of src_temp_3:{src_temp_3.shape}")
+        # print(f"Size of src_temp_1:{src_temp_1.shape}")
+        # print(f"Size of src_temp_2:{src_temp_2.shape}")
+        # print(f"Size of src_temp_3:{src_temp_3.shape}")
         ##########################################################################################
 
         if self.input_ln is not None:
@@ -263,7 +266,7 @@ class TransformerModel(nn.Module):
         ################### Embedding for Inter-feature implementation ###########################
         src_temp_4 = torch.split(src_temp_3, [dim]*num_ft, dim=2)
         src = torch.stack(list(src_temp_4), dim=0).squeeze(2)
-        print(f"Size of src:{src.shape}")
+        print(f"Size of src: {src.shape}")
         ##########################################################################################
 
         output = self.transformer_encoder(src, src_mask)
@@ -393,7 +396,7 @@ def categories_offset(data_categorical):
     
     return num_unique_categories, categories_offset_1
 
-def embed_data(dim, x_categ):
+def embed_data_cat(dim, x_categ):
     f"""Incoming x_categ must be of shape torch.Size([datapoints, features])
         Output x_categ_enc is of shape torch.Size([datapoints, features, dim])"""
 
@@ -405,5 +408,24 @@ def embed_data(dim, x_categ):
     x_categ_enc = embeds(x_categ)
 
     return x_categ_enc
+
+def embed_data_num(dim, x_cont,):
+    
+    num_continuous = x_cont.shape[1]
+    
+    simp_MLP = nn.ModuleList([simple_MLP([1,100,dim]) for _ in range(num_continuous)])
+    
+    n1,n2 = x_cont.shape
+  
+    x_cont_enc = torch.empty(n1,n2, dim)
+    
+    for i in range(num_continuous):
+        x_cont_enc[:,i,:] = simp_MLP[i](x_cont[:,i])
+    
+    # not sure if we need this:
+    device = x_cont.device
+    x_cont_enc = x_cont_enc.to(device)
+
+    return x_cont_enc
 
 ##############################################################################################
