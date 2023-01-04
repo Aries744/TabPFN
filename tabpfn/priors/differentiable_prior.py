@@ -262,6 +262,8 @@ def get_batch(batch_size, seq_len, num_features, get_batch
                                         , torch.cat(y, 1).detach()
                                         , torch.cat(y_, 1).detach()
                                         , packed_hyperparameters)#list(itertools.chain.from_iterable(itertools.repeat(x, batch_size_per_gp_sample) for x in packed_hyperparameters)))#torch.repeat_interleave(torch.stack(packed_hyperparameters, 0).detach(), repeats=batch_size_per_gp_sample, dim=0))
+    
+    print(f"Ugne: DIFFERENTIABLE PRIOR x {x} (differentiable_prior.py)")
     return x, y, y_, (packed_hyperparameters if hyperparameters.get('differentiable_hps_as_style', True) else None)
 
 DataLoader = get_batch_to_dataloader(get_batch)

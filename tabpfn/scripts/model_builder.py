@@ -241,6 +241,8 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
         if config['prior_type'] == 'mlp':
             prior_hyperparameters = get_mlp_prior_hyperparameters(config)
             model_proto = priors.mlp
+            print(f"Ugne: if config['prior_type'] == 'mlp' gets run (model_builder.py)")
+            print(f"Ugne: 1) model_proto {model_proto} (model_builder.py)")
         elif config['prior_type'] == 'gp':
             prior_hyperparameters = get_gp_prior_hyperparameters(config)
             model_proto = priors.fast_gp
@@ -256,6 +258,7 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
             extra_kwargs['get_batch'] = get_batch_base
             model_proto = priors.flexible_categorical
             print(f"Ugne: we use priors.flexible_categorical (model_builder.py)")
+            print(f"Ugne: 2) model_proto {model_proto} (model_builder.py)")
         else:
             print(f"Ugne: we DON'T use priors.flexible_categorical (model_builder.py)")
 
@@ -297,6 +300,7 @@ def get_model(config, device, should_train=True, verbose=False, state_dict=None,
     config['bptt_extra_samples'] = config['bptt_extra_samples'] if 'bptt_extra_samples' in config else None
     config['eval_positions'] = [int(config['bptt'] * 0.95)] if config['bptt_extra_samples'] is None else [int(config['bptt'])]
 
+    print(f"Ugne: 3) model_proto {model_proto} (model_builder.py)")
     epochs = 0 if not should_train else config['epochs']
     #print('MODEL BUILDER', model_proto, extra_kwargs['get_batch'])
     model = train(model_proto.DataLoader

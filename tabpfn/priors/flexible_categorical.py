@@ -12,6 +12,12 @@ from utils import normalize_data, nan_handling_missing_for_unknown_reason_value,
 from .utils import randomize_classes, CategoricalActivation
 from .utils import uniform_int_sampler_f
 
+########################## adding this ##################################
+import numpy as np
+from einops import rearrange 
+#########################################################################
+
+
 time_it = False
 
 class BalancedBinarize(nn.Module):
@@ -111,8 +117,8 @@ class FlexibleCategorical(torch.nn.Module):
         if self.h['num_classes'] == 0:
             self.class_assigner = RegressionNormalized()
         else:
-            if self.h['num_classes'] > 1 and not self.h['balanced']:
-                if self.h['multiclass_type'] == 'rank':
+            if self.h['num_classes'] > 1 and not self.h['balanced']: # Ugne: RUN, 'balanced': False
+                if self.h['multiclass_type'] == 'rank': # Ugne: RUN, multiclass_type': 'rank'
                     self.class_assigner = MulticlassRank(self.h['num_classes']
                                                  , ordered_p=self.h['output_multiclass_ordered_p']
                                                  )
@@ -180,6 +186,7 @@ class FlexibleCategorical(torch.nn.Module):
                     u_true = True
             print(f"Ugne: Categorical features if if statement is {u_true} and we have x {x.shape} (flexible_categorical.py)")
             print(f"Ugne: Categorical features if if statement is {u_true} and we have x {x} (flexible_categorical.py)")
+            print(f"{np.array([list(torch.unique(x).shape) for x in rearrange(x, 'd a f -> f d a')]).squeeze(1)}")
 
         if time_it:
             print('Flex Forward Block 2', round(time.time() - start, 3))
@@ -192,7 +199,7 @@ class FlexibleCategorical(torch.nn.Module):
             x = remove_outliers(x)
         
         ########################## commenting this out ##################################
-        # x, y = normalize_data(x), normalize_data(y)
+        x, y = normalize_data(x), normalize_data(y)
         #################################################################################
 
         if time_it:
@@ -207,10 +214,10 @@ class FlexibleCategorical(torch.nn.Module):
             start = time.time()
         
         # Ugne: current config: 'normalize_by_used_features': True
-        print(f"Ugne: normalize_by_used_features = {self.h['normalize_by_used_features']} but I'm setting to False manually")
+        # print(f"Ugne: normalize_by_used_features = {self.h['normalize_by_used_features']} but I'm setting to False manually")
         ########################## commenting this out ##################################
-        # if self.h['normalize_by_used_features']:
-        #     x = normalize_by_used_features_f(x, self.h['num_features_used'], self.args['num_features'], normalize_with_sqrt=self.h.get('normalize_with_sqrt',False))
+        if self.h['normalize_by_used_features']:
+            x = normalize_by_used_features_f(x, self.h['num_features_used'], self.args['num_features'], normalize_with_sqrt=self.h.get('normalize_with_sqrt',False))
         #################################################################################
         if time_it:
             print('Flex Forward Block 5', round(time.time() - start, 3))
