@@ -146,7 +146,8 @@ class FlexibleCategorical(torch.nn.Module):
     def forward(self, batch_size):
         start = time.time()
         x, y, y_ = self.get_batch(hyperparameters=self.h, **self.args_passed)
-        # print(f"Ugne: printing x {x} (flexible_categorical.py)")
+        print(f"Ugne: initial x {x.shape} (flexible_categorical.py)")
+        print(f"Ugne: initial x {x} (flexible_categorical.py)")
         if time_it:
             print('Flex Forward Block 1', round(time.time() - start, 3))
 
@@ -174,7 +175,7 @@ class FlexibleCategorical(torch.nn.Module):
             for col in range(x.shape[2]):
                 num_unique_features = max(round(random.gammavariate(1,10)),2)
                 m = MulticlassRank(num_unique_features, ordered_p=0.3)
-                if random.random()/10 < p: # Ugne: initially it was random.random()
+                if random.random()/10 < p: # Ugne: initially it was random.random() which I changed to random.random()/10
                     x[:, :, col] = m(x[:, :, col])
                     u_true = True
             print(f"Ugne: Categorical features if if statement is {u_true} and we have x {x.shape} (flexible_categorical.py)")
@@ -189,7 +190,10 @@ class FlexibleCategorical(torch.nn.Module):
             x = to_ranking_low_mem(x)
         else:
             x = remove_outliers(x)
-        x, y = normalize_data(x), normalize_data(y)
+        
+        ########################## commenting this out ##################################
+        # x, y = normalize_data(x), normalize_data(y)
+        #################################################################################
 
         if time_it:
             print('Flex Forward Block 3', round(time.time() - start, 3))
@@ -201,9 +205,13 @@ class FlexibleCategorical(torch.nn.Module):
         if time_it:
             print('Flex Forward Block 4', round(time.time() - start, 3))
             start = time.time()
+        
         # Ugne: current config: 'normalize_by_used_features': True
-        if self.h['normalize_by_used_features']:
-            x = normalize_by_used_features_f(x, self.h['num_features_used'], self.args['num_features'], normalize_with_sqrt=self.h.get('normalize_with_sqrt',False))
+        print(f"Ugne: normalize_by_used_features = {self.h['normalize_by_used_features']} but I'm setting to False manually")
+        ########################## commenting this out ##################################
+        # if self.h['normalize_by_used_features']:
+        #     x = normalize_by_used_features_f(x, self.h['num_features_used'], self.args['num_features'], normalize_with_sqrt=self.h.get('normalize_with_sqrt',False))
+        #################################################################################
         if time_it:
             print('Flex Forward Block 5', round(time.time() - start, 3))
         
@@ -257,7 +265,7 @@ class FlexibleCategorical(torch.nn.Module):
                     y[valid_labels, b] = (y[valid_labels, b] + random_shift) % num_classes
 
         print(f"Ugne: x output {x.shape}")
-        print(f"Ugne: x aoutput {x}")
+        print(f"Ugne: x output {x}")
         return x, y, y  # x.shape = (T,B,H)
 
 import torch.cuda as cutorch
@@ -283,10 +291,10 @@ def get_batch(batch_size, seq_len, num_features, get_batch, device, hyperparamet
 
     print(f"Ugne: get_batch() output x {x.shape}")
     print(f"Ugne: get_batch() output x {x}")
-    print(f"Ugne: get_batch() output y {y.shape}")
-    print(f"Ugne: get_batch() output y {y}")
-    print(f"Ugne: get_batch() output y_ {y_.shape}")
-    print(f"Ugne: get_batch() output y_ {y_}")
+    # print(f"Ugne: get_batch() output y {y.shape}")
+    # print(f"Ugne: get_batch() output y {y}")
+    # print(f"Ugne: get_batch() output y_ {y_.shape}")
+    # print(f"Ugne: get_batch() output y_ {y_}")
     return x, y, y_
 
 # num_features_used = num_features_used_sampler()
