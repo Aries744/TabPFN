@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "itabpfn"
 version = "0.0.10"
 authors = []
-description = "Interface for using TabPFN and library to train TabPFN'"
+description = "Interface for using interfeature TabPFN and library to train TabPFN'"
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies=[

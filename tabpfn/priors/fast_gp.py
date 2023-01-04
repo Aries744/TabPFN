@@ -6,8 +6,8 @@ import gpytorch
 
 from .utils import get_batch_to_dataloader
 # Antanas
-# from tabpfn.utils import default_device
-from utils import default_device
+from tabpfn.utils import default_device
+# from utils import default_device
 
 
 # We will use the simplest form of GP model, exact inference

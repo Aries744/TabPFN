@@ -2,9 +2,8 @@ import math
 
 import torch
 import torch.nn as nn
-# Antanas
-# from tabpfn.utils import normalize_data
-from utils import normalize_data
+
+from tabpfn.utils import normalize_data
 import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 

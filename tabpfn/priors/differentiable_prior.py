@@ -4,8 +4,8 @@ import math
 
 from .utils import get_batch_to_dataloader
 # Antanas
-from utils import default_device, normalize_by_used_features_f
-#from tabpfn.utils import default_device, normalize_by_used_features_f
+# from utils import default_device, normalize_by_used_features_f
+from tabpfn.utils import default_device, normalize_by_used_features_f
 
 from .utils import order_by_y
 

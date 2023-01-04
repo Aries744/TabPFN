@@ -19,6 +19,7 @@ def get_general_config(max_features, bptt, eval_positions=None):
         "lr": CSH.UniformFloatHyperparameter('lr', lower=0.0001, upper=0.00015, log=True),
         "dropout": CSH.CategoricalHyperparameter('dropout', [0.0]),
         "emsize": CSH.CategoricalHyperparameter('emsize', [2 ** i for i in range(8, 9)]), ## upper bound is -1
+        "emsize_f":256,
         "batch_size": CSH.CategoricalHyperparameter('batch_size', [2 ** i for i in range(6, 8)]),
         "nlayers": CSH.CategoricalHyperparameter('nlayers', [12]),
         "num_features": max_features,

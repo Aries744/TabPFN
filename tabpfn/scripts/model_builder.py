@@ -1,11 +1,11 @@
 from functools import partial
-import encoders as encoders
-# import tabpfn.encoders as encoders
+# import encoders as encoders
+import tabpfn.encoders as encoders
 #Antanas
-# from tabpfn.transformer import TransformerModel
-# from tabpfn.utils import get_uniform_single_eval_pos_sampler
-from transformer import TransformerModel
-from utils import get_uniform_single_eval_pos_sampler
+from tabpfn.transformer import TransformerModel
+from tabpfn.utils import get_uniform_single_eval_pos_sampler
+# from transformer import TransformerModel
+# from utils import get_uniform_single_eval_pos_sampler
 import torch
 import math
 

@@ -6,8 +6,8 @@ from torch import nn
 import numpy as np
 
 # Antanas
-from utils import default_device
-# from tabpfn.utils import default_device
+# from utils import default_device
+from tabpfn.utils import default_device
 
 from .utils import get_batch_to_dataloader
 
